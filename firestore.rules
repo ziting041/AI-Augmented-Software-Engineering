@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 第一版尚未使用 Firestore，也沒有登入功能，先全部拒絕。
+    // 接上資料存取時，再依集合逐一開放（例如：quizzes 可讀、僅管理員可寫）。
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
