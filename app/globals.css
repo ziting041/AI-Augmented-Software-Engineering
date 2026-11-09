@@ -4,12 +4,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Design System：心理測驗室 · The Somnambulist（夢遊者月刊）
+   紙張（paper）＋ 夜墨（ink）為基底；珊瑚（coral）是夢的溫度、
+   霧紫（haze）是潛意識、檸檬（citron）只用在少量會動的小細節。
+   所有顏色只在這裡定義，元件一律透過 token 使用。
+   ========================================================================== */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
+  --font-display: var(--font-fraunces), var(--font-noto-serif-tc), "Songti TC", serif;
+  --font-serif: var(--font-noto-serif-tc), "Songti TC", serif;
+
+  /* 品牌色 */
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-coral: var(--coral);
+  --color-haze: var(--haze);
+  --color-citron: var(--citron);
+  --color-sea: var(--sea);
+  --color-night: var(--night);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,85 +67,207 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --ease-dream: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-page-in: page-in 0.6s var(--ease-dream) both;
+  --animate-page-in-back: page-in-back 0.6s var(--ease-dream) both;
+  --animate-rise: rise 0.9s var(--ease-dream) both;
+  --animate-float: float 9s ease-in-out infinite;
+  --animate-orbit: orbit 60s linear infinite;
+  --animate-twinkle: twinkle 3.2s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-stamp: stamp 0.45s var(--ease-dream) both;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* 品牌原色 */
+  --paper: oklch(0.966 0.016 84);
+  --paper-deep: oklch(0.925 0.024 80);
+  --ink: oklch(0.235 0.05 274);
+  --ink-soft: oklch(0.42 0.04 274);
+  --night: oklch(0.2 0.055 278);
+  --coral: oklch(0.68 0.165 33);
+  --haze: oklch(0.79 0.075 300);
+  --citron: oklch(0.92 0.15 106);
+  --sea: oklch(0.74 0.085 205);
+  --rose: oklch(0.83 0.07 10);
+  --moss: oklch(0.74 0.08 145);
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* 人格配色：依結果類型順序循環使用 */
+  --persona-1: var(--coral);
+  --persona-2: var(--haze);
+  --persona-3: var(--sea);
+  --persona-4: var(--citron);
+  --persona-5: var(--rose);
+  --persona-6: var(--moss);
+
+  /* shadcn/ui 語意 token（後台與共用元件沿用） */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: oklch(0.982 0.01 84);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.982 0.01 84);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--paper-deep);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-deep);
+  --muted-foreground: oklch(0.46 0.03 274);
+  --accent: oklch(0.9 0.04 300);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.55 0.2 27);
+  --border: oklch(0.235 0.05 274 / 16%);
+  --input: oklch(0.235 0.05 274 / 22%);
+  --ring: var(--coral);
+  --chart-1: var(--persona-1);
+  --chart-2: var(--persona-2);
+  --chart-3: var(--persona-3);
+  --chart-4: var(--persona-4);
+  --chart-5: var(--persona-5);
+  --radius: 0.5rem;
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--paper-deep);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--coral);
+
+  /* 紙張顆粒（SVG 雜訊） */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+    @apply border-border outline-ring/60;
   }
   html {
     @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "palt" 1;
+    text-rendering: optimizeLegibility;
+  }
+  /* 紙張顆粒：固定覆蓋、不攔截點擊 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    background-image: var(--grain);
+    opacity: 0.09;
+    mix-blend-mode: multiply;
+  }
+  ::selection {
+    background: var(--citron);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  /* Fraunces 的柔和、俏皮軸 */
+  .font-wonk {
+    font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  }
+  .font-soft {
+    font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 144;
+  }
+  /* 空心字：描邊顏色可用 --outline-color 調整；需要填色時直接設定 color */
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--outline-color, var(--ink));
+  }
+  .text-balance-cjk {
+    text-wrap: balance;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .rule-dotted {
+    background-image: radial-gradient(currentColor 1px, transparent 1.5px);
+    background-size: 8px 8px;
+    background-position: 0 50%;
+    background-repeat: repeat-x;
+  }
+  .stagger > * {
+    animation: var(--animate-rise);
+  }
+  .stagger > *:nth-child(2) { animation-delay: 80ms; }
+  .stagger > *:nth-child(3) { animation-delay: 160ms; }
+  .stagger > *:nth-child(4) { animation-delay: 240ms; }
+  .stagger > *:nth-child(5) { animation-delay: 320ms; }
+  .stagger > *:nth-child(6) { animation-delay: 400ms; }
+  .stagger > *:nth-child(n + 7) { animation-delay: 480ms; }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes page-in-back {
+  from { opacity: 0; transform: translate3d(0, -28px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -14px, 0) rotate(2deg); }
+}
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes marquee {
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes stamp {
+  0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+  70% { transform: scale(1.12) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes bloom {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes develop {
+  0%, 55% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes develop-text {
+  0% { opacity: 0; letter-spacing: 0.6em; filter: blur(6px); }
+  40% { opacity: 1; letter-spacing: 0.2em; filter: blur(0); }
+  100% { opacity: 1; letter-spacing: 0.2em; }
+}
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* 尊重「減少動態效果」設定：保留狀態變化，移除位移與循環動畫 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
   }
 }

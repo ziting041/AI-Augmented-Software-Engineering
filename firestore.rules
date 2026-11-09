@@ -2,8 +2,63 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 第一版尚未使用 Firestore，也沒有登入功能，先全部拒絕。
-    // 接上資料存取時，再依集合逐一開放（例如：quizzes 可讀、僅管理員可寫）。
+
+    // 管理員名單：admins/{uid} 文件存在即為管理員。
+    // 只能透過 Firebase Console 或 Admin SDK 新增，前端無法寫入。
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidQuiz(data) {
+      let keys = ['title', 'description', 'published', 'results', 'questions',
+                  'resultIds', 'createdAt', 'updatedAt'];
+      return data.keys().hasOnly(keys)
+        && data.keys().hasAll(keys)
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.description is string && data.description.size() <= 1000
+        && data.published is bool
+        && data.results is list && data.results.size() >= 2 && data.results.size() <= 20
+        && data.resultIds is list && data.resultIds.size() == data.results.size()
+        && data.questions is list && data.questions.size() >= 1 && data.questions.size() <= 50
+        && data.updatedAt == request.time;
+    }
+
+    match /admins/{uid} {
+      // 讓登入者確認自己是否為管理員
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    match /quizzes/{quizId} {
+      // 已發布的測驗任何人可讀；草稿僅管理員可讀。
+      // 一般使用者列表查詢必須帶 where('published', '==', true)。
+      allow read: if resource.data.published == true || isAdmin();
+      allow create: if isAdmin()
+        && isValidQuiz(request.resource.data)
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && isValidQuiz(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      // 匿名作答紀錄：任何人可新增，只能指向已發布測驗中存在的結果類型；
+      // 不可修改或刪除，僅管理員可讀取（統計用）。
+      allow create: if request.resource.data.keys().hasOnly(['quizId', 'resultId', 'createdAt'])
+        && request.resource.data.keys().hasAll(['quizId', 'resultId', 'createdAt'])
+        && request.resource.data.quizId is string
+        && request.resource.data.resultId is string
+        && request.resource.data.createdAt == request.time
+        && get(/databases/$(database)/documents/quizzes/$(request.resource.data.quizId)).data.published == true
+        && request.resource.data.resultId in
+             get(/databases/$(database)/documents/quizzes/$(request.resource.data.quizId)).data.resultIds;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // 其他集合一律拒絕
     match /{document=**} {
       allow read, write: if false;
     }
