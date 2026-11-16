@@ -15,7 +15,7 @@ import {
 } from "./editor"
 
 describe("測驗編輯器", () => {
-  it("建立的空白測驗包含 2 個結果類型與 1 道題目", () => {
+  it("[AC-5.4] 建立的空白測驗包含 2 個結果類型與 1 道題目", () => {
     const draft = createEmptyQuiz()
     expect(draft.results).toHaveLength(2)
     expect(draft.questions).toHaveLength(1)
@@ -23,7 +23,7 @@ describe("測驗編輯器", () => {
     expect(draft.published).toBe(false)
   })
 
-  it("不會修改原本的物件", () => {
+  it("[AC-5.4] 不會修改原本的物件", () => {
     const draft = createEmptyQuiz()
     const snapshot = structuredClone(draft)
     addQuestion(draft)
@@ -32,7 +32,7 @@ describe("測驗編輯器", () => {
     expect(draft).toEqual(snapshot)
   })
 
-  it("可新增、刪除題目與選項", () => {
+  it("[AC-5.4] 可新增、刪除題目與選項", () => {
     let draft = addQuestion(createEmptyQuiz())
     expect(draft.questions).toHaveLength(2)
     const q = draft.questions[1]
@@ -44,7 +44,7 @@ describe("測驗編輯器", () => {
     expect(draft.questions).toHaveLength(1)
   })
 
-  it("可切換題型與調整題目順序", () => {
+  it("[AC-5.4] 可切換題型與調整題目順序", () => {
     let draft = addQuestion(createEmptyQuiz())
     const [first, second] = draft.questions
     draft = updateQuestion(draft, second.id, { type: "multiple" })
@@ -55,7 +55,7 @@ describe("測驗編輯器", () => {
     expect(moveQuestion(draft, second.id, -1)).toBe(draft)
   })
 
-  it("分數設為 0 時從 scores 移除", () => {
+  it("[AC-5.4] 分數設為 0 時從 scores 移除", () => {
     let draft = createEmptyQuiz()
     const q = draft.questions[0]
     const o = q.options[0]
@@ -66,7 +66,7 @@ describe("測驗編輯器", () => {
     expect(draft.questions[0].options[0].scores).toEqual({})
   })
 
-  it("刪除結果類型時一併清除相關分數", () => {
+  it("[AC-5.4] 刪除結果類型時一併清除相關分數", () => {
     let draft = createEmptyQuiz()
     const q = draft.questions[0]
     const [r1, r2] = draft.results
@@ -77,7 +77,7 @@ describe("測驗編輯器", () => {
     expect(draft.questions[0].options[0].scores).toEqual({ [r2.id]: 1 })
   })
 
-  it("toDraft 只保留可編輯欄位", () => {
+  it("[AC-5.4] toDraft 只保留可編輯欄位", () => {
     const draft = createEmptyQuiz()
     const quiz = { ...draft, id: "x", createdAt: 1, updatedAt: 2 }
     expect(toDraft(quiz)).toEqual(draft)

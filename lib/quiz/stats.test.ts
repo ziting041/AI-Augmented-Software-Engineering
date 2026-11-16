@@ -9,7 +9,7 @@ const results = [
 ]
 
 describe("summarizeStats", () => {
-  it("計算人數與百分比", () => {
+  it("[AC-6.1] 計算人數與百分比", () => {
     const stats = summarizeStats(results, { a: 1, b: 2, c: 0 })
     expect(stats.total).toBe(3)
     expect(stats.items.map((i) => [i.result.id, i.count, i.percent])).toEqual([
@@ -19,13 +19,13 @@ describe("summarizeStats", () => {
     ])
   })
 
-  it("沒有作答時百分比為 0", () => {
+  it("[AC-6.2] 沒有作答時百分比為 0", () => {
     const stats = summarizeStats(results, {})
     expect(stats.total).toBe(0)
     expect(stats.items.every((i) => i.percent === 0)).toBe(true)
   })
 
-  it("忽略已刪除結果類型的人數", () => {
+  it("[AC-6.3] 忽略已刪除結果類型的人數", () => {
     expect(summarizeStats(results, { a: 1, deleted: 5 }).total).toBe(1)
   })
 })

@@ -9,13 +9,13 @@ async function login(page: Page) {
   await expect(page.getByRole("heading", { name: "測驗管理" })).toBeVisible();
 }
 
-test("未登入時無法進入管理頁", async ({ page }) => {
+test("[AC-4.3] 未登入時無法進入管理頁", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
 });
 
-test("密碼錯誤時無法登入", async ({ page }) => {
+test("[AC-4.2] 密碼錯誤時無法登入", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("電子郵件").fill("admin@example.com");
   await page.getByLabel("密碼").fill("wrong");
@@ -23,7 +23,7 @@ test("密碼錯誤時無法登入", async ({ page }) => {
   await expect(page.getByRole("alert").filter({ hasText: "帳號或密碼錯誤" })).toBeVisible();
 });
 
-test("管理員新增測驗、使用者作答、管理員查看統計", async ({ page }) => {
+test("[AC-4.1][AC-5.1][AC-5.2][AC-1.1][AC-6.1] 管理員新增測驗、使用者作答、管理員查看統計", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "新增測驗" }).click();
 
@@ -69,7 +69,7 @@ test("管理員新增測驗、使用者作答、管理員查看統計", async ({
   await expect(page.getByText("1 人・100%")).toBeVisible();
 });
 
-test("草稿測驗不會出現在首頁", async ({ page }) => {
+test("[AC-5.3] 草稿測驗不會出現在首頁", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "編輯「你是哪一種森林動物？」" }).click();
   await page.getByText("發布（勾選後所有使用者都看得到）").click();
@@ -78,4 +78,21 @@ test("草稿測驗不會出現在首頁", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.getByText("目前還沒有測驗")).toBeVisible();
+});
+
+test("[AC-5.5] 匯入範例測驗只補上缺少的，重複匯入不會產生重複", async ({ page }) => {
+  await login(page);
+  const importButton = page.getByRole("button", { name: "匯入範例測驗" });
+
+  // 本機模式預設只有「森林動物」，應補上其餘 3 份
+  await importButton.click();
+  await expect(page.getByRole("status").filter({ hasText: "已匯入 3 份範例測驗" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^編輯「/ })).toHaveCount(4);
+
+  await importButton.click();
+  await expect(page.getByRole("status").filter({ hasText: "範例測驗都已經在清單中了" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^編輯「/ })).toHaveCount(4);
+
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /^開始「/ })).toHaveCount(4);
 });

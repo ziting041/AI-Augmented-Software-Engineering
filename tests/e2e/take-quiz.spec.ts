@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("使用者作答範例測驗並看到結果", async ({ page }) => {
+test("[AC-1.1][AC-1.3][AC-2.1][AC-2.2][AC-2.6][AC-3.1][AC-3.3][AC-3.4][AC-3.5][AC-6.1] 使用者作答範例測驗並看到結果", async ({ page }) => {
   await page.goto("/");
   await expect(
     page.getByRole("link", { name: "開始「你是哪一種森林動物？」" }),
@@ -107,12 +107,12 @@ test("使用者作答範例測驗並看到結果", async ({ page }) => {
   await expect(page.getByText("結果無法取得")).toBeVisible();
 });
 
-test("找不到測驗時顯示提示", async ({ page }) => {
+test("[AC-2.5] 找不到測驗時顯示提示", async ({ page }) => {
   await page.goto("/quiz/not-exist");
   await expect(page.getByText("找不到這份測驗")).toBeVisible();
 });
 
-test("目錄載入失敗不會呈現空列表，服務恢復後可重試", async ({ page }) => {
+test("[AC-1.4] 目錄載入失敗不會呈現空列表，服務恢復後可重試", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
   const validData = await page.evaluate(() => localStorage.getItem("quiz-site:quizzes"));
@@ -129,7 +129,7 @@ test("目錄載入失敗不會呈現空列表，服務恢復後可重試", async
   await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
 });
 
-test("未發布或無效題目不列入目錄，直接開啟時拒絕作答", async ({ page }) => {
+test("[AC-1.2] 未發布或無效題目不列入目錄，直接開啟時拒絕作答", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
   await page.evaluate(() => {

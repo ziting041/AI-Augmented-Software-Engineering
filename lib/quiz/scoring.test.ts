@@ -44,29 +44,29 @@ const quiz: QuizDraft = {
 }
 
 describe("isQuestionAnswered", () => {
-  it("單選題需剛好選一個", () => {
+  it("[AC-2.2] 單選題需剛好選一個", () => {
     expect(isQuestionAnswered(single, [])).toBe(false)
     expect(isQuestionAnswered(single, ["s1"])).toBe(true)
     expect(isQuestionAnswered(single, ["s1", "s2"])).toBe(false)
   })
 
-  it("多選題至少選一個", () => {
+  it("[AC-2.2] 多選題至少選一個", () => {
     expect(isQuestionAnswered(multiple, undefined)).toBe(false)
     expect(isQuestionAnswered(multiple, ["m1", "m3"])).toBe(true)
   })
 
-  it("不接受不屬於該題的選項", () => {
+  it("[AC-2.4] 不接受不屬於該題的選項", () => {
     expect(isQuestionAnswered(single, ["m1"])).toBe(false)
   })
 })
 
 describe("selectOption", () => {
-  it("單選題會取代原本的選擇", () => {
+  it("[AC-2.2] 單選題會取代原本的選擇", () => {
     const answers = selectOption({ s: ["s1"] }, single, "s2")
     expect(answers.s).toEqual(["s2"])
   })
 
-  it("多選題可勾選與取消，並保持選項順序", () => {
+  it("[AC-2.2] 多選題可勾選與取消，並保持選項順序", () => {
     let answers = selectOption({}, multiple, "m3")
     answers = selectOption(answers, multiple, "m1")
     expect(answers.m).toEqual(["m1", "m3"])
@@ -76,12 +76,12 @@ describe("selectOption", () => {
 })
 
 describe("tallyScores", () => {
-  it("加總所選選項的分數，未得分的結果為 0", () => {
+  it("[AC-2.1] 加總所選選項的分數，未得分的結果為 0", () => {
     expect(tallyScores(quiz, { s: ["s1"], m: ["m1", "m3"] })).toEqual({ a: 4, b: 1 })
     expect(tallyScores(quiz, {})).toEqual({ a: 0, b: 0 })
   })
 
-  it("忽略指向不存在結果類型的分數", () => {
+  it("[AC-2.4] 忽略指向不存在結果類型的分數", () => {
     const broken: QuizDraft = {
       ...quiz,
       questions: [
@@ -93,11 +93,11 @@ describe("tallyScores", () => {
 })
 
 describe("determineResult", () => {
-  it("回傳總分最高的結果類型", () => {
+  it("[AC-2.1] 回傳總分最高的結果類型", () => {
     expect(determineResult(quiz, { s: ["s2"], m: ["m2"] }).id).toBe("b")
   })
 
-  it("同分時取排列較前面的結果類型", () => {
+  it("[AC-2.3] 同分時取排列較前面的結果類型", () => {
     const multipleOnly: QuizDraft = { ...quiz, questions: [multiple] }
     // a:1, b:1 同分 → 取排在前面的 a
     expect(determineResult(multipleOnly, { m: ["m1", "m2"] }).id).toBe("a")
@@ -106,12 +106,12 @@ describe("determineResult", () => {
     expect(determineResult(reversed, { m: ["m1", "m2"] }).id).toBe("b")
   })
 
-  it("未作答完畢時拋出錯誤", () => {
+  it("[AC-2.4] 未作答完畢時拋出錯誤", () => {
     expect(() => determineResult(quiz, { s: ["s1"] })).toThrow("尚有題目未作答")
     expect(isQuizComplete(quiz, { s: ["s1"] })).toBe(false)
   })
 
-  it("拒絕不屬於該測驗或重複的答案", () => {
+  it("[AC-2.4] 拒絕不屬於該測驗或重複的答案", () => {
     expect(isQuizComplete(quiz, { s: ["s1"], m: ["m1"], ghost: ["x"] })).toBe(false)
     expect(() => determineResult(quiz, { s: ["m1"], m: ["m1"] })).toThrow(
       "答案包含不屬於該題的選項",
@@ -119,7 +119,7 @@ describe("determineResult", () => {
     expect(isQuestionAnswered(multiple, ["m1", "m1"])).toBe(false)
   })
 
-  it("範例測驗每個結果類型都有機會出現", () => {
+  it("[AC-5.6] 範例測驗每個結果類型都有機會出現", () => {
     const sample = createSampleQuiz()
     const reached = new Set<string>()
     sample.results.forEach((_, index) => {
