@@ -70,7 +70,7 @@ npm run dev
 
 第一次跑 E2E 前需下載瀏覽器：`npx playwright install chromium`。
 
-所有變更請開分支並發 PR，GitHub Actions（`.github/workflows/ci.yml`）會自動執行上表的檢查，全部通過才能合併。
+所有變更請開分支並發 PR。GitHub Actions（`.github/workflows/ci.yml`）會自動執行 `lint`、`test:unit`、`test:e2e` 與 `build`；`typecheck`、`check:ac`、`test:rules` 目前未納入 CI，開 PR 前請在本機執行。
 
 ## Firebase
 
