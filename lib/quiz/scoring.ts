@@ -5,10 +5,10 @@ export function isQuestionAnswered(
   question: Question,
   selected: readonly string[] | undefined,
 ): boolean {
-  if (!selected || selected.length === 0) return false
+  if (!Array.isArray(selected) || selected.length === 0) return false
   if (question.type === "single" && selected.length !== 1) return false
   const validIds = new Set(question.options.map((o) => o.id))
-  return selected.every((id) => validIds.has(id))
+  return new Set(selected).size === selected.length && selected.every((id) => validIds.has(id))
 }
 
 /** 作答時點選選項：單選題直接取代，多選題切換勾選狀態（保持選項原順序） */
@@ -18,6 +18,7 @@ export function selectOption(
   optionId: string,
   checked = true,
 ): Answers {
+  if (!question.options.some((option) => option.id === optionId)) return answers
   if (question.type === "single") {
     return { ...answers, [question.id]: [optionId] }
   }
@@ -30,8 +31,40 @@ export function selectOption(
   }
 }
 
-export function isQuizComplete(quiz: QuizDraft, answers: Answers): boolean {
-  return quiz.questions.every((q) => isQuestionAnswered(q, answers[q.id]))
+export function isQuizComplete(quiz: QuizDraft, answers: unknown): answers is Answers {
+  return getAnswerValidationErrors(quiz, answers).length === 0
+}
+
+export function getAnswerValidationErrors(quiz: QuizDraft, answers: unknown): string[] {
+  if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+    return ["答案資料無效"]
+  }
+
+  const questionIds = new Set(quiz.questions.map((question) => question.id))
+  const errors: string[] = []
+  if (Object.keys(answers).some((questionId) => !questionIds.has(questionId))) {
+    errors.push("答案包含不存在的題目")
+  }
+
+  const answerMap = answers as Record<string, unknown>
+  for (const question of quiz.questions) {
+    const selected = answerMap[question.id]
+    if (!Array.isArray(selected) || selected.length === 0) {
+      errors.push("尚有題目未作答")
+      continue
+    }
+
+    const validIds = new Set(question.options.map((option) => option.id))
+    if (
+      new Set(selected).size !== selected.length ||
+      selected.some((optionId) => typeof optionId !== "string" || !validIds.has(optionId)) ||
+      (question.type === "single" && selected.length !== 1)
+    ) {
+      errors.push("答案包含不屬於該題的選項")
+    }
+  }
+
+  return [...new Set(errors)]
 }
 
 /** 加總每個結果類型的分數；未出現的結果類型分數為 0 */
@@ -64,8 +97,9 @@ export function determineResult(quiz: QuizDraft, answers: Answers): ResultType {
   if (quiz.results.length === 0) {
     throw new Error("測驗沒有任何結果類型")
   }
+  const answerErrors = getAnswerValidationErrors(quiz, answers)
   if (!isQuizComplete(quiz, answers)) {
-    throw new Error("尚有題目未作答")
+    throw new Error(answerErrors[0])
   }
 
   const totals = tallyScores(quiz, answers)

@@ -1,6 +1,6 @@
 import { FirebaseError } from "firebase/app"
 import {
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth"
@@ -12,6 +12,7 @@ import {
   getCountFromServer,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -23,6 +24,7 @@ import {
 
 import { auth, db } from "@/lib/firebase/client"
 import type { Quiz, QuizDraft } from "@/lib/quiz/types"
+import { isPlayableQuiz } from "@/lib/quiz/validation"
 import { sortByUpdatedDesc } from "./serialize"
 import {
   DataError,
@@ -46,6 +48,12 @@ function fromFirestore(id: string, data: DocumentData): Quiz {
     id,
     title: String(data.title ?? ""),
     description: String(data.description ?? ""),
+    category:
+      typeof data.category === "string"
+        ? data.category
+        : data.category === undefined
+          ? "未分類"
+          : "",
     published: data.published === true,
     results: Array.isArray(data.results) ? data.results : [],
     questions: Array.isArray(data.questions) ? data.questions : [],
@@ -59,6 +67,7 @@ function toFirestore(draft: QuizDraft) {
   return {
     title: draft.title.trim(),
     description: draft.description.trim(),
+    category: draft.category.trim(),
     published: draft.published,
     results: draft.results,
     questions: draft.questions,
@@ -84,7 +93,9 @@ const quizzes: QuizRepository = {
       const snap = await getDocs(
         query(collection(db, QUIZZES), where("published", "==", true)),
       )
-      return sortByUpdatedDesc(snap.docs.map((d) => fromFirestore(d.id, d.data())))
+      return sortByUpdatedDesc(
+        snap.docs.map((d) => fromFirestore(d.id, d.data())).filter(isPlayableQuiz),
+      )
     } catch (error) {
       throw wrap(error, "無法載入測驗清單")
     }
@@ -176,27 +187,43 @@ const authService: AuthService = {
   subscribe(listener) {
     listener({ status: "loading" })
     let latest = 0
-    return onAuthStateChanged(auth, async (user) => {
+    let stopAdminWatch: (() => void) | undefined
+    const stopAuthWatch = onIdTokenChanged(auth, (user) => {
       const ticket = ++latest
+      stopAdminWatch?.()
+      stopAdminWatch = undefined
       if (!user) {
         listener({ status: "signed-out" })
         return
       }
-      // 管理員名單存在 admins/{uid}，只能由 Firebase Console 或 Admin SDK 新增
-      let isAdmin = false
-      try {
-        isAdmin = (await getDoc(doc(db, ADMINS, user.uid))).exists()
-      } catch {
-        isAdmin = false
-      }
-      if (ticket !== latest) return
-      const session: AdminSession = {
-        status: "signed-in",
-        email: user.email ?? "",
-        isAdmin,
-      }
-      listener(session)
+      listener({ status: "loading" })
+      stopAdminWatch = onSnapshot(
+        doc(db, ADMINS, user.uid),
+        (snapshot) => {
+          if (ticket !== latest) return
+          const session: AdminSession = {
+            status: "signed-in",
+            email: user.email ?? "",
+            isAdmin: snapshot.exists(),
+          }
+          listener(session)
+        },
+        (error: unknown) => {
+          if (ticket !== latest) return
+          listener({
+            status: "error",
+            message: isPermissionDenied(error)
+              ? "無法確認管理員權限，請重新登入。"
+              : "無法驗證登入狀態，請檢查網路後重試。",
+          })
+        },
+      )
     })
+    return () => {
+      latest += 1
+      stopAdminWatch?.()
+      stopAuthWatch()
+    }
   },
 
   async signIn(email, password) {

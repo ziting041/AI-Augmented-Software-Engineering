@@ -27,6 +27,7 @@ export interface Question {
 export interface QuizDraft {
   title: string
   description: string
+  category: string
   published: boolean
   results: ResultType[]
   questions: Question[]

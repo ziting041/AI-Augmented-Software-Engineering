@@ -34,6 +34,7 @@ const multiple: Question = {
 const quiz: QuizDraft = {
   title: "測試",
   description: "",
+  category: "測試分類",
   published: true,
   results: [
     { id: "a", title: "A 型", description: "" },
@@ -108,6 +109,14 @@ describe("determineResult", () => {
   it("未作答完畢時拋出錯誤", () => {
     expect(() => determineResult(quiz, { s: ["s1"] })).toThrow("尚有題目未作答")
     expect(isQuizComplete(quiz, { s: ["s1"] })).toBe(false)
+  })
+
+  it("拒絕不屬於該測驗或重複的答案", () => {
+    expect(isQuizComplete(quiz, { s: ["s1"], m: ["m1"], ghost: ["x"] })).toBe(false)
+    expect(() => determineResult(quiz, { s: ["m1"], m: ["m1"] })).toThrow(
+      "答案包含不屬於該題的選項",
+    )
+    expect(isQuestionAnswered(multiple, ["m1", "m1"])).toBe(false)
   })
 
   it("範例測驗每個結果類型都有機會出現", () => {

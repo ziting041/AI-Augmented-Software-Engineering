@@ -147,6 +147,9 @@ export function ResultSpread({
           <p className="mt-6 font-serif text-xl leading-[1.9] whitespace-pre-line first-letter:float-left first-letter:mt-1 first-letter:mr-3 first-letter:text-[4.2rem] first-letter:leading-[0.85] first-letter:font-black first-letter:text-coral sm:text-[1.35rem]">
             {result.description || "這個人格還沒有說明。"}
           </p>
+          <p className="mt-4 text-sm text-ink-soft">
+            本結果僅供娛樂與自我探索，不構成心理診斷。
+          </p>
         </div>
 
         <div className="md:col-span-5">
@@ -238,11 +241,15 @@ export function ResultSpread({
           <p className="mt-4 max-w-md leading-relaxed text-ink-soft">
             下載專屬結果卡（1080 × 1350），或直接分享給朋友，看看他們會長出什麼樣的花冠。
           </p>
+          <p className="mt-3 text-sm text-ink-soft">
+            分享連結會包含本次作答選項資訊，以便重現結果；請只分享給信任的對象。
+          </p>
         </div>
         <div className="flex flex-col gap-3 md:col-span-6 md:items-end">
           <ResultActions
             emblemRef={emblemRef}
             quiz={quiz}
+            answers={answers}
             issue={`Persona Issue No.${issueNo}`}
             name={name}
             tagline={tagline}

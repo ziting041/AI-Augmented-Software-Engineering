@@ -26,13 +26,14 @@ export function createEmptyQuiz(): QuizDraft {
   return {
     title: "",
     description: "",
+    category: "",
     published: false,
     results: [createEmptyResult(), createEmptyResult()],
     questions: [createEmptyQuestion()],
   }
 }
 
-type DraftFields = Pick<QuizDraft, "title" | "description" | "published">
+type DraftFields = Pick<QuizDraft, "title" | "description" | "category" | "published">
 
 export function updateQuizFields(
   draft: QuizDraft,
@@ -178,6 +179,7 @@ export function toDraft(quiz: QuizDraft): QuizDraft {
   return {
     title: quiz.title,
     description: quiz.description,
+    category: quiz.category,
     published: quiz.published,
     results: quiz.results,
     questions: quiz.questions,

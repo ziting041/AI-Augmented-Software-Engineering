@@ -11,12 +11,13 @@ service cloud.firestore {
     }
 
     function isValidQuiz(data) {
-      let keys = ['title', 'description', 'published', 'results', 'questions',
+      let keys = ['title', 'description', 'category', 'published', 'results', 'questions',
                   'resultIds', 'createdAt', 'updatedAt'];
       return data.keys().hasOnly(keys)
         && data.keys().hasAll(keys)
         && data.title is string && data.title.size() > 0 && data.title.size() <= 100
         && data.description is string && data.description.size() <= 1000
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 40
         && data.published is bool
         && data.results is list && data.results.size() >= 2 && data.results.size() <= 20
         && data.resultIds is list && data.resultIds.size() == data.results.size()

@@ -1,9 +1,12 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 
+import { Input } from "@/components/ui/input"
 import { useRepositoryData } from "@/lib/data/hooks"
+import { filterQuizzes, listQuizCategories } from "@/lib/quiz/catalog"
 import { buildEmblem } from "@/lib/quiz/emblem"
 import { PersonaEmblem } from "./persona-emblem"
 import { EmptyState, ErrorState, LoadingState } from "./status-message"
@@ -14,10 +17,22 @@ function estimateMinutes(questionCount: number) {
 }
 
 export function QuizList() {
+  const [search, setSearch] = useState("")
+  const [category, setCategory] = useState("")
   const state = useRepositoryData("published-quizzes", (repos) =>
     repos.quizzes.listPublished(),
   )
-
+  const categories = useMemo(
+    () => (state.status === "success" ? listQuizCategories(state.data) : []),
+    [state],
+  )
+  const quizzes = useMemo(
+    () =>
+      state.status === "success"
+        ? filterQuizzes(state.data, { search, category })
+        : [],
+    [state, search, category],
+  )
   return (
     <section id="contents" className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-24">
       <header className="mb-10 grid gap-2 md:grid-cols-12 md:items-end">
@@ -27,7 +42,7 @@ export function QuizList() {
         </h2>
         <p className="text-ink-soft md:col-span-4 md:text-right">
           {state.status === "success"
-            ? `收錄 ${state.data.length} 篇測驗專題`
+            ? `顯示 ${quizzes.length} / ${state.data.length} 篇測驗專題`
             : "每一篇，都是一次和自己的對話"}
         </p>
       </header>
@@ -40,8 +55,47 @@ export function QuizList() {
         </EmptyState>
       )}
       {state.status === "success" && state.data.length > 0 && (
+        <div className="mb-8 grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+          <Input
+            type="search"
+            aria-label="搜尋測驗"
+            placeholder="搜尋測驗名稱或說明"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <select
+            aria-label="測驗分類"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <option value="">所有分類</option>
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {state.status === "success" && quizzes.length === 0 && state.data.length > 0 && (
+        <EmptyState title="找不到符合條件的測驗">
+          <p className="text-sm text-ink-soft">試試其他關鍵字或清除搜尋與分類篩選。</p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("")
+              setCategory("")
+            }}
+            className="rounded-full border border-ink px-4 py-2 text-sm transition-colors hover:bg-ink hover:text-paper"
+          >
+            清除搜尋與篩選
+          </button>
+        </EmptyState>
+      )}
+      {state.status === "success" && quizzes.length > 0 && (
         <ol className="stagger">
-          {state.data.map((quiz, i) => {
+          {quizzes.map((quiz, i) => {
             const emblem = buildEmblem({
               seed: quiz.id,
               shares: quiz.results.map((_, ri) => 1 / (ri + 1.5)),
@@ -68,6 +122,8 @@ export function QuizList() {
                       <span>{quiz.questions.length} 題</span>
                       <span aria-hidden>·</span>
                       <span>約 {estimateMinutes(quiz.questions.length)} 分鐘</span>
+                      <span aria-hidden>·</span>
+                      <span>{quiz.category}</span>
                       <span aria-hidden>·</span>
                       <span>{quiz.results.length} 種人格</span>
                     </span>

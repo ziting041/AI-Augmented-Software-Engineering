@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest"
 import { createEmptyQuiz, setOptionScore, updateOptionText, updateQuestion, updateQuizFields, updateResult } from "./editor"
 import { createSampleQuiz } from "./sample"
 import type { QuizDraft } from "./types"
-import { validateQuiz } from "./validation"
+import { isPlayableQuiz, validateQuiz } from "./validation"
 
 function filledQuiz(): QuizDraft {
   let draft = createEmptyQuiz()
-  draft = updateQuizFields(draft, { title: "小測驗" })
+  draft = updateQuizFields(draft, { title: "小測驗", category: "個性探索" })
   draft.results.forEach((r, i) => {
     draft = updateResult(draft, r.id, { title: `結果 ${i + 1}` })
   })
@@ -15,6 +15,7 @@ function filledQuiz(): QuizDraft {
   draft = updateQuestion(draft, q.id, { text: "題目" })
   q.options.forEach((o, i) => {
     draft = updateOptionText(draft, q.id, o.id, `選項 ${i + 1}`)
+    draft = setOptionScore(draft, q.id, o.id, draft.results[i].id, 1)
   })
   return draft
 }
@@ -31,6 +32,29 @@ describe("validateQuiz", () => {
     expect(errors).toContain("結果類型 1：請輸入名稱")
     expect(errors).toContain("第 1 題：請輸入題目內容")
     expect(errors).toContain("第 1 題選項 1：請輸入選項內容")
+    expect(errors).toContain("請選擇或輸入測驗分類")
+  })
+
+  it("只有已發布且內容完整的測驗可作答", () => {
+    const sample = createSampleQuiz()
+    expect(isPlayableQuiz(sample)).toBe(true)
+    expect(isPlayableQuiz({ ...sample, published: false })).toBe(false)
+    expect(isPlayableQuiz({ ...sample, questions: [] })).toBe(false)
+    expect(isPlayableQuiz({ ...sample, questions: [{ ...sample.questions[0], options: [] }] })).toBe(
+      false,
+    )
+    expect(
+      isPlayableQuiz({
+        ...sample,
+        questions: [
+          {
+            ...sample.questions[0],
+            options: sample.questions[0].options.map((option) => ({ ...option, scores: {} })),
+          },
+        ],
+      }),
+    ).toBe(false)
+    expect(isPlayableQuiz(null)).toBe(false)
   })
 
   it("結果類型至少 2 個、題目至少 1 道", () => {

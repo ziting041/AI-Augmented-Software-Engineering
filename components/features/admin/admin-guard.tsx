@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getRepositories } from "@/lib/data"
 import { useAdminSession } from "@/lib/data/hooks"
-import { EmptyState, LoadingState } from "../status-message"
+import { EmptyState, ErrorState, LoadingState } from "../status-message"
 
 /**
  * 管理頁面的畫面守門。真正的權限檢查在 Firestore 安全規則，
@@ -20,6 +20,15 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (session.status === "signed-out") router.replace("/admin/login")
   }, [session.status, router])
+
+  if (session.status === "error") {
+    return (
+      <ErrorState
+        message={session.message}
+        onRetry={() => window.location.reload()}
+      />
+    )
+  }
 
   if (session.status !== "signed-in") return <LoadingState label="確認登入狀態…" />
 

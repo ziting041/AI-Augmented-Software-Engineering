@@ -3,6 +3,7 @@
 import { createId } from "@/lib/quiz/editor"
 import { createSampleQuiz } from "@/lib/quiz/sample"
 import type { Quiz, QuizDraft } from "@/lib/quiz/types"
+import { isPlayableQuiz } from "@/lib/quiz/validation"
 import { sortByUpdatedDesc } from "./serialize"
 import {
   DataError,
@@ -31,11 +32,15 @@ interface StoredSubmission {
 }
 
 function read<T>(key: string, fallback: T): T {
+  const raw = localStorage.getItem(key)
+  if (raw === null) return fallback
   try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
+    return JSON.parse(raw) as T
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new DataError("本機資料格式錯誤，請清除資料後重試", { cause: error })
+    }
+    throw error
   }
 }
 
@@ -51,7 +56,10 @@ function loadQuizzes(): Quiz[] {
       { ...createSampleQuiz(), id: "sample", createdAt: now, updatedAt: now },
     ])
   }
-  return read<Quiz[]>(KEYS.quizzes, [])
+  return read<Quiz[]>(KEYS.quizzes, []).map((quiz) => ({
+    ...quiz,
+    category: typeof quiz.category === "string" ? quiz.category : "未分類",
+  }))
 }
 
 function isSignedIn(): boolean {
@@ -64,7 +72,7 @@ function requireAdmin(): void {
 
 const quizzes: QuizRepository = {
   async listPublished() {
-    return sortByUpdatedDesc(loadQuizzes().filter((q) => q.published))
+    return sortByUpdatedDesc(loadQuizzes().filter(isPlayableQuiz))
   },
   async listAll() {
     requireAdmin()
@@ -81,7 +89,7 @@ const quizzes: QuizRepository = {
     const id = createId()
     write(KEYS.quizzes, [
       ...loadQuizzes(),
-      { ...draft, id, createdAt: now, updatedAt: now },
+      { ...draft, category: draft.category.trim(), id, createdAt: now, updatedAt: now },
     ])
     return id
   },
@@ -91,7 +99,11 @@ const quizzes: QuizRepository = {
     if (!all.some((q) => q.id === id)) throw new DataError("找不到這份測驗")
     write(
       KEYS.quizzes,
-      all.map((q) => (q.id === id ? { ...q, ...draft, updatedAt: Date.now() } : q)),
+      all.map((q) =>
+        q.id === id
+          ? { ...q, ...draft, category: draft.category.trim(), updatedAt: Date.now() }
+          : q,
+      ),
     )
   },
   async remove(id) {

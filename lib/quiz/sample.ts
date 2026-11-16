@@ -6,6 +6,7 @@ export function createSampleQuiz(): QuizDraft {
     title: "你是哪一種森林動物？",
     description:
       "透過 6 道生活情境題，看看你在人群中最像哪一種森林動物。結果僅供娛樂參考。",
+    category: "個性探索",
     published: true,
     results: [
       {

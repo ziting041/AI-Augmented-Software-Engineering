@@ -124,6 +124,18 @@ function QuizForm({ quizId, initial }: { quizId?: string; initial: QuizDraft }) 
               }
             />
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="quiz-category">測驗分類</Label>
+            <Input
+              id="quiz-category"
+              value={draft.category}
+              maxLength={LIMITS.categoryMax}
+              placeholder="例如：個性探索"
+              onChange={(e) =>
+                setDraft(edit.updateQuizFields(draft, { category: e.target.value }))
+              }
+            />
+          </div>
           <Label className="cursor-pointer">
             <Checkbox
               checked={draft.published}

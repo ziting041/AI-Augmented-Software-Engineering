@@ -9,6 +9,12 @@ async function login(page: Page) {
   await expect(page.getByRole("heading", { name: "測驗管理" })).toBeVisible();
 }
 
+test("未登入時無法進入管理頁", async ({ page }) => {
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
+});
+
 test("密碼錯誤時無法登入", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("電子郵件").fill("admin@example.com");
@@ -27,6 +33,7 @@ test("管理員新增測驗、使用者作答、管理員查看統計", async ({
 
   await page.getByLabel("測驗標題").fill("早餐性格測驗");
   await page.getByLabel("測驗說明").fill("從早餐看個性");
+  await page.getByLabel("測驗分類").fill("生活風格");
   await page.getByText("發布（勾選後所有使用者都看得到）").click();
 
   await page.getByLabel("結果 1 名稱").fill("甜食派");
@@ -46,6 +53,9 @@ test("管理員新增測驗、使用者作答、管理員查看統計", async ({
 
   // 使用者在首頁看到並作答
   await page.goto("/");
+  await expect(
+    page.getByRole("link", { name: "開始「早餐性格測驗」" }),
+  ).toContainText("生活風格");
   await page.getByRole("link", { name: "開始「早餐性格測驗」" }).click();
   await page.getByRole("button", { name: "開始測驗" }).click();
   await page.getByRole("radio", { name: "蘿蔔糕" }).click();

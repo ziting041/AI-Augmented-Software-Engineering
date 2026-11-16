@@ -2,6 +2,13 @@ import { expect, test } from "@playwright/test";
 
 test("使用者作答範例測驗並看到結果", async ({ page }) => {
   await page.goto("/");
+  await expect(
+    page.getByRole("link", { name: "開始「你是哪一種森林動物？」" }),
+  ).toContainText("個性探索");
+  await expect(page.getByText("約 2 分鐘")).toBeVisible();
+  await page.getByLabel("搜尋測驗").fill("沒有這個測驗");
+  await expect(page.getByText("找不到符合條件的測驗")).toBeVisible();
+  await page.getByRole("button", { name: "清除搜尋與篩選" }).click();
   await page.getByRole("link", { name: "開始「你是哪一種森林動物？」" }).click();
 
   await expect(page.getByRole("heading", { name: "你是哪一種森林動物？" })).toBeVisible();
@@ -38,15 +45,26 @@ test("使用者作答範例測驗並看到結果", async ({ page }) => {
   // 第 6 題（多選，最後一題）
   await expect(page.getByText("第 6 / 6 題")).toBeVisible();
   await page.getByRole("checkbox", { name: "學會一項新知識" }).click();
-  await page.getByRole("button", { name: "看結果" }).click();
+  await page.getByRole("button", { name: "看結果" }).evaluate((button) => {
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    button.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+  });
 
   const title = page.getByTestId("result-title");
   await expect(title).toContainText("貓頭鷹");
   await expect(title).toContainText("冷靜的思考者");
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("quiz-site:submissions") ?? "[]").length),
+    )
+    .toBe(1);
 
   // 依據：列出實際作答
   await expect(page.getByRole("heading", { name: /為什麼是你/ })).toBeVisible();
   await expect(page.getByText("你選了「在家看書或研究有興趣的主題」")).toBeVisible();
+  await expect(
+    page.getByText("本結果僅供娛樂與自我探索，不構成心理診斷。"),
+  ).toBeVisible();
 
   // 下載結果卡
   const downloadPromise = page.waitForEvent("download");
@@ -54,11 +72,74 @@ test("使用者作答範例測驗並看到結果", async ({ page }) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
 
+  await page.evaluate(() => {
+    Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
+      configurable: true,
+      value: (callback: BlobCallback) => callback(null),
+    });
+  });
+  const failedDownload = page
+    .waitForEvent("download", { timeout: 1000 })
+    .then(() => true)
+    .catch(() => false);
+  await page.getByRole("button", { name: "下載結果卡" }).click();
+  await expect(page.getByRole("status")).toContainText("請再按一次");
+  expect(await failedDownload).toBe(false);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => Promise.reject(new Error("clipboard unavailable")) },
+    });
+  });
+  await page.getByRole("button", { name: "分享結果" }).click();
+  await expect(page.getByRole("status")).toContainText("無法自動複製");
+  const shareUrl = await page.getByLabel("結果分享連結").inputValue();
+  expect(new URL(shareUrl).searchParams.get("result")).not.toBeNull();
+
+  await page.goto(shareUrl);
+  await expect(page.getByTestId("result-title")).toContainText("貓頭鷹");
   await page.getByRole("button", { name: "再測一次" }).click();
   await expect(page.getByRole("button", { name: "開始測驗" })).toBeVisible();
+
+  await page.goto("/quiz/sample?result=not-json");
+  await expect(page.getByText("結果無法取得")).toBeVisible();
 });
 
 test("找不到測驗時顯示提示", async ({ page }) => {
   await page.goto("/quiz/not-exist");
   await expect(page.getByText("找不到這份測驗")).toBeVisible();
+});
+
+test("目錄載入失敗不會呈現空列表，服務恢復後可重試", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
+  const validData = await page.evaluate(() => localStorage.getItem("quiz-site:quizzes"));
+  expect(validData).not.toBeNull();
+
+  await page.evaluate(() => localStorage.setItem("quiz-site:quizzes", "{"));
+  await page.reload();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "本機資料格式錯誤" }),
+  ).toBeVisible();
+
+  await page.evaluate((data) => localStorage.setItem("quiz-site:quizzes", data!), validData);
+  await page.getByRole("button", { name: "重試" }).click();
+  await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
+});
+
+test("未發布或無效題目不列入目錄，直接開啟時拒絕作答", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "開始「你是哪一種森林動物？」" })).toBeVisible();
+  await page.evaluate(() => {
+    const quizzes = JSON.parse(localStorage.getItem("quiz-site:quizzes") ?? "[]");
+    quizzes[0].questions[0].options = [];
+    localStorage.setItem("quiz-site:quizzes", JSON.stringify(quizzes));
+  });
+
+  await page.reload();
+  await expect(page.getByText("目前還沒有測驗")).toBeVisible();
+  await page.goto("/quiz/sample");
+  await expect(page.getByText("測驗目前無法使用")).toBeVisible();
 });

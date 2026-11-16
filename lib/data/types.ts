@@ -21,6 +21,7 @@ export interface SubmissionRepository {
 
 export type AdminSession =
   | { status: "loading" }
+  | { status: "error"; message: string }
   | { status: "signed-out" }
   | { status: "signed-in"; email: string; isAdmin: boolean }
 

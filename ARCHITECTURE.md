@@ -77,11 +77,13 @@ tests/e2e/*.spec.ts     Playwright 關鍵流程測試
 
 | 集合                 | 內容                                                                 | 權限                                       |
 | -------------------- | -------------------------------------------------------------------- | ------------------------------------------ |
-| `quizzes/{id}`       | title、description、published、results、questions、resultIds、createdAt、updatedAt | 已發布者任何人可讀；寫入與讀草稿限管理員 |
+| `quizzes/{id}`       | title、description、category、published、results、questions、resultIds、createdAt、updatedAt | 已發布者任何人可讀；寫入與讀草稿限管理員 |
 | `submissions/{id}`   | quizId、resultId、createdAt                                          | 任何人可新增（須指向已發布測驗的結果）；僅管理員可讀；不可修改刪除 |
 | `admins/{uid}`       | 空文件即可，存在代表該帳號為管理員                                   | 本人可讀；前端不可寫，需於 Console 新增   |
 
 `resultIds` 是 `results` 的 ID 清單，讓安全規則能驗證作答結果是否合法。
+
+目錄只呈現已發布且通過內容驗證的測驗，可依標題、說明搜尋並按分類篩選。結果分享連結會帶有本次作答選項識別碼，以便重現結果；使用者應只分享給信任的對象。
 
 ### 邊界
 

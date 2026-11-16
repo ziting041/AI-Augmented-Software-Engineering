@@ -3,7 +3,10 @@
 import { useState, type RefObject } from "react"
 import { Download, Loader2, Share2 } from "lucide-react"
 
+import { Input } from "@/components/ui/input"
+import type { Answers } from "@/lib/quiz/types"
 import { renderResultCard } from "@/lib/share/result-card"
+import { createResultLink } from "@/lib/share/result-link"
 import type { Quiz } from "@/lib/quiz/types"
 
 type Status = { kind: "idle" } | { kind: "busy"; action: "download" | "share" } | { kind: "message"; text: string }
@@ -11,6 +14,7 @@ type Status = { kind: "idle" } | { kind: "busy"; action: "download" | "share" } 
 export function ResultActions({
   emblemRef,
   quiz,
+  answers,
   issue,
   name,
   tagline,
@@ -18,12 +22,14 @@ export function ResultActions({
 }: {
   emblemRef: RefObject<SVGSVGElement | null>
   quiz: Quiz
+  answers: Answers
   issue: string
   name: string
   tagline: string | null
   spectrum: { label: string; share: number; colorVar: string; highlight: boolean }[]
 }) {
   const [status, setStatus] = useState<Status>({ kind: "idle" })
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
 
   async function makeCard(): Promise<File> {
     if (!emblemRef.current) throw new Error("圖騰尚未準備好")
@@ -52,35 +58,51 @@ export function ResultActions({
       setStatus({ kind: "message", text: "結果卡已下載" })
     } catch (error) {
       console.error(error)
-      setStatus({ kind: "message", text: "下載失敗，請稍後再試" })
+      setStatus({ kind: "message", text: "下載失敗，請再按一次「下載結果卡」重試。" })
+    }
+  }
+
+  async function copyLink(url: string) {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("瀏覽器不支援剪貼簿")
+      await navigator.clipboard.writeText(url)
+      setShareUrl(null)
+      setStatus({ kind: "message", text: "已複製結果分享連結" })
+    } catch (error) {
+      console.error("複製分享連結失敗", error)
+      setShareUrl(url)
+      setStatus({ kind: "message", text: "無法自動複製，請選取下方連結並手動複製。" })
     }
   }
 
   async function share() {
     setStatus({ kind: "busy", action: "share" })
-    const url = `${window.location.origin}/quiz/${quiz.id}`
+    setShareUrl(null)
+    const url = createResultLink(window.location.origin, quiz.id, answers)
     const text = `我在《${quiz.title}》測出「${name}${tagline ? `：${tagline}` : ""}」，你呢？`
-    try {
-      if (navigator.share) {
-        const file = await makeCard().catch(() => null)
-        const data: ShareData =
-          file && navigator.canShare?.({ files: [file] })
-            ? { title: quiz.title, text, url, files: [file] }
-            : { title: quiz.title, text, url }
+
+    if (typeof navigator.share === "function") {
+      const data: ShareData = { title: quiz.title, text, url }
+      try {
+        const file = await makeCard()
+        if (navigator.canShare?.({ files: [file] })) data.files = [file]
+      } catch (error) {
+        console.error("建立分享圖片失敗", error)
+      }
+
+      try {
         await navigator.share(data)
         setStatus({ kind: "idle" })
-      } else {
-        await navigator.clipboard.writeText(`${text} ${url}`)
-        setStatus({ kind: "message", text: "已複製分享文字與連結" })
-      }
-    } catch (error) {
-      // 使用者取消分享不算錯誤
-      if (error instanceof DOMException && error.name === "AbortError") {
-        setStatus({ kind: "idle" })
-      } else {
-        setStatus({ kind: "message", text: "無法分享，請改用下載結果卡" })
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          setStatus({ kind: "idle" })
+          return
+        }
+        console.error("裝置分享失敗", error)
       }
     }
+    await copyLink(url)
   }
 
   const busy = status.kind === "busy"
@@ -118,6 +140,20 @@ export function ResultActions({
       <p role="status" aria-live="polite" className="min-h-5 text-sm text-ink-soft">
         {status.kind === "message" ? status.text : ""}
       </p>
+      {shareUrl && (
+        <div className="grid w-full gap-1">
+          <label htmlFor="result-share-link" className="text-xs text-ink-soft">
+            結果分享連結
+          </label>
+          <Input
+            id="result-share-link"
+            type="text"
+            value={shareUrl}
+            readOnly
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </div>
+      )}
     </div>
   )
 }

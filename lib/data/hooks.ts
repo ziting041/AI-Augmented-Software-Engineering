@@ -59,6 +59,10 @@ export function useAdminSession(): AdminSession {
     let cancelled = false
     getRepositories().then((repos) => {
       if (!cancelled) unsubscribe = repos.auth.subscribe(setSession)
+    }).catch((error: unknown) => {
+      if (!cancelled) {
+        setSession({ status: "error", message: toUserMessage(error) })
+      }
     })
     return () => {
       cancelled = true

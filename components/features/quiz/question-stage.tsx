@@ -20,6 +20,7 @@ export function QuestionStage({
   onSelect,
   onPrev,
   onNext,
+  errorMessage,
 }: {
   quiz: Quiz
   index: number
@@ -28,6 +29,7 @@ export function QuestionStage({
   onSelect: (optionId: string, checked: boolean) => void
   onPrev: () => void
   onNext: () => void
+  errorMessage: string | null
 }) {
   const question = quiz.questions[index]
   const total = quiz.questions.length
@@ -167,6 +169,12 @@ export function QuestionStage({
                 </ChoiceCheckbox>
               ))}
             </div>
+          )}
+
+          {errorMessage && (
+            <p role="alert" className="text-sm text-destructive">
+              {errorMessage}
+            </p>
           )}
 
           <div className="mt-auto flex items-center justify-between gap-4 pt-4">
