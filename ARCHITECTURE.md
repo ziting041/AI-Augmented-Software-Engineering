@@ -20,6 +20,7 @@
 | 樣式         | Tailwind CSS + shadcn/ui            |
 | 單元測試     | Vitest                              |
 | E2E 測試     | Playwright                          |
+| 規則測試     | `@firebase/rules-unit-testing` + Firestore 模擬器 |
 | 後端         | Firebase Auth、Firestore（Client SDK + 安全規則） |
 
 ## 3. 目錄結構
@@ -35,6 +36,9 @@ lib/                    核心邏輯（領域模型、評分、資料存取）
   share/result-card.ts  以 Canvas 產生可下載的結果卡（1080×1350）
   data/                 repository 介面與實作（firebase.ts / local.ts）、React hooks
 tests/e2e/*.spec.ts     Playwright 關鍵流程測試
+tests/rules/            Firestore 安全規則測試（模擬器）
+docs/user-stories.md    User Stories 與驗收條件（測試的需求來源）
+scripts/                開發工具（AC 對齊檢查）
 ```
 
 ### 路由
@@ -95,12 +99,15 @@ tests/e2e/*.spec.ts     Playwright 關鍵流程測試
 
 - 領域邏輯（例如評分）以 Vitest 測試。
 - 關鍵使用流程（例如：作答並看到結果、管理員新增測驗）以 Playwright 測試，放在 `tests/e2e/*.spec.ts`。Playwright 會以本機模式（`NEXT_PUBLIC_DATA_BACKEND=local`）在 port 3100 啟動 `next dev`，不會連到正式 Firebase；並使用獨立輸出目錄 `.next/e2e`（`NEXT_DIST_DIR`），可與開發中的 `npm run dev` 同時執行。
-- 開 PR 前必須通過：
+- **需求來源**：[`docs/user-stories.md`](docs/user-stories.md) 以 Given-When-Then 定義 AC。每個測試名稱必須以 `[AC-x.y]` 標註所驗證的 AC；`npm run check:ac` 會確認測試與 AC 雙向對齊（無多餘、無遺漏）。新增功能時先寫 AC，再寫測試，最後實作。
+- Firestore 安全規則以 `@firebase/rules-unit-testing` 在模擬器中測試（`tests/rules/`，`npm run test:rules`），驗證規則本身而非前端行為。
+- 合併到 `main` 前，GitHub Actions（`lint`、`test:unit`、`test:e2e`、`build`）必須全數通過，不可只憑本機結果。
+- 以下檢查尚未納入 CI，開 PR 前須在本機執行並於 PR 說明中附上結果：
 
   ```bash
-  npm run lint
-  npm run test:unit
-  npx playwright test
+  npm run typecheck
+  npm run check:ac
+  npm run test:rules   # 需 Java 11+ 與 Firebase CLI
   ```
 
 ## 8. Git 規範

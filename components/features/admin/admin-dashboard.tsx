@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getRepositories, toUserMessage } from "@/lib/data"
 import { useRepositoryData } from "@/lib/data/hooks"
-import { createSampleQuiz } from "@/lib/quiz/sample"
+import { missingSeedQuizzes } from "@/lib/quiz/seeds"
 import type { Quiz } from "@/lib/quiz/types"
 import { EmptyState, ErrorState, LoadingState } from "../status-message"
 
@@ -17,6 +17,7 @@ export function AdminDashboard() {
   const state = useRepositoryData("admin-quizzes", (repos) => repos.quizzes.listAll())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   async function run(action: () => Promise<unknown>, fallback: string) {
     setBusy(true)
@@ -31,11 +32,21 @@ export function AdminDashboard() {
     }
   }
 
-  function importSample() {
-    return run(
-      async () => (await getRepositories()).quizzes.create(createSampleQuiz()),
-      "無法匯入範例測驗",
-    )
+  /** 只匯入尚未存在的範例測驗（倒序建立，讓第一份排在最上面） */
+  function importSamples() {
+    setNotice(null)
+    return run(async () => {
+      const repos = await getRepositories()
+      const missing = missingSeedQuizzes(await repos.quizzes.listAll())
+      for (const quiz of [...missing].reverse()) {
+        await repos.quizzes.create(quiz)
+      }
+      setNotice(
+        missing.length === 0
+          ? "範例測驗都已經在清單中了"
+          : `已匯入 ${missing.length} 份範例測驗`,
+      )
+    }, "無法匯入範例測驗")
   }
 
   function remove(quiz: Quiz) {
@@ -51,7 +62,7 @@ export function AdminDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-serif text-3xl font-black">測驗管理</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={importSample} disabled={busy}>
+          <Button variant="outline" onClick={importSamples} disabled={busy}>
             <Wand2 data-icon="inline-start" aria-hidden />
             匯入範例測驗
           </Button>
@@ -65,6 +76,12 @@ export function AdminDashboard() {
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
+        </p>
+      )}
+
+      {notice && (
+        <p role="status" className="rounded-lg border border-ink/20 bg-haze/25 px-4 py-2 text-sm">
+          {notice}
         </p>
       )}
 
