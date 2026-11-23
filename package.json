@@ -10,7 +10,9 @@
     "test:unit": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "typecheck": "next typegen && tsc --noEmit",
-    "check:ac": "node scripts/check-ac-coverage.mjs"
+    "check:ac": "node scripts/check-ac-coverage.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-quiz-site \"vitest run --config vitest.rules.config.mts\"",
+    "test:e2e:firebase": "firebase emulators:exec --only auth,firestore --project demo-quiz-site \"playwright test --config playwright.firebase.config.ts\""
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "firebase-tools": "^15.34.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.3"

@@ -6,8 +6,9 @@
 // 任一項不符即以非零代碼結束，供 CI 擋下。
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
+import { fileURLToPath } from "node:url"
 
-const root = new URL("..", import.meta.url).pathname
+const root = fileURLToPath(new URL("..", import.meta.url))
 const TEST_DIRS = ["lib", "tests"]
 const TEST_FILE = /\.(test|spec)\.ts$/
 const AC_ID = /AC-\d+\.\d+/g
