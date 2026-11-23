@@ -97,13 +97,21 @@ scripts/                開發工具（AC 對齊檢查）
 
 - 領域邏輯（例如評分）以 Vitest 測試。
 - 關鍵使用流程（例如：作答並看到結果、管理員新增測驗）以 Playwright 測試，放在 `tests/e2e/*.spec.ts`。Playwright 會以本機模式（`NEXT_PUBLIC_DATA_BACKEND=local`）在 port 3100 啟動 `next dev`，不會連到正式 Firebase；並使用獨立輸出目錄 `.next/e2e`（`NEXT_DIST_DIR`），可與開發中的 `npm run dev` 同時執行。
+- Firebase Auth 與 Firestore 的瀏覽器端整合流程以 Playwright 測試，執行 `npm run test:e2e:firebase`。測試會啟動 Firebase Emulator，以 `NEXT_PUBLIC_DATA_BACKEND=firebase` 連接 `demo-quiz-site` 假專案，不連線正式 Firebase，並使用獨立輸出目錄 `.next/e2e-firebase`。
+- Firestore 安全規則另以 Firebase Emulator 測試，執行 `npm run test:rules`。本機執行 Emulator 測試需要 Java 21。
 - **需求來源**：[`docs/user-stories.md`](docs/user-stories.md) 以 Given-When-Then 定義 AC。每個測試名稱必須以 `[AC-x.y]` 標註所驗證的 AC；`npm run check:ac` 會確認測試與 AC 雙向對齊（無多餘、無遺漏）。新增功能時先寫 AC，再寫測試，最後實作。
-- 合併到 `main` 前，GitHub Actions（`lint`、`test:unit`、`test:e2e`、`build`）必須全數通過，不可只憑本機結果。
-- 以下檢查尚未納入 CI，開 PR 前須在本機執行並於 PR 說明中附上結果：
+- 合併到 `main` 前，GitHub Actions（`lint`、`typecheck`、`check:ac`、`test:unit`、`test:rules`、`test:e2e`、`test:e2e:firebase`、`build`）必須全數通過，不可只憑本機結果。
+- 開 PR 前須通過：
 
   ```bash
+  npm run lint
   npm run typecheck
   npm run check:ac
+  npm run test:unit
+  npm run test:rules
+  npm run test:e2e
+  npm run test:e2e:firebase
+  npm run build
   ```
 
 ## 8. Git 規範

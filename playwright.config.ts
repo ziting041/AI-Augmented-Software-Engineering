@@ -12,6 +12,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
+  workers: 2,
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",

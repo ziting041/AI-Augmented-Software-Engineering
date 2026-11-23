@@ -12,6 +12,7 @@ async function login(page: Page) {
 test("[AC-6.1] 未登入時開啟管理頁被導向登入頁，看不到管理內容", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByText("管理員登入", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
 });
 

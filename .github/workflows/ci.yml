@@ -20,9 +20,18 @@ jobs:
           node-version: 24.12.0
           cache: npm
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run check:ac
       - run: npm run test:unit
+      - run: npm run test:rules
       - run: npm run test:e2e
+      - run: npm run test:e2e:firebase
       - run: npm run build
