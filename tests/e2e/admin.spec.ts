@@ -12,6 +12,27 @@ async function login(page: Page) {
 test("未登入時無法進入管理頁", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByText("管理員登入", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
+});
+
+test("登入工作階段失效後重新進入管理頁會要求重新登入", async ({ page }) => {
+  await login(page);
+  await page.evaluate(() => localStorage.removeItem("quiz-site:session"));
+  await page.goto("/admin");
+
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByText("管理員登入", { exact: true })).toBeVisible();
+});
+
+test("已登入但非管理員時拒絕進入管理頁", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("quiz-site:session", JSON.stringify("member@example.com"));
+  });
+  await page.goto("/admin");
+
+  await expect(page.getByText("你沒有管理員權限")).toBeVisible();
   await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
 });
 

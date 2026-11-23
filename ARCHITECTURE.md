@@ -95,12 +95,16 @@ tests/e2e/*.spec.ts     Playwright 關鍵流程測試
 
 - 領域邏輯（例如評分）以 Vitest 測試。
 - 關鍵使用流程（例如：作答並看到結果、管理員新增測驗）以 Playwright 測試，放在 `tests/e2e/*.spec.ts`。Playwright 會以本機模式（`NEXT_PUBLIC_DATA_BACKEND=local`）在 port 3100 啟動 `next dev`，不會連到正式 Firebase；並使用獨立輸出目錄 `.next/e2e`（`NEXT_DIST_DIR`），可與開發中的 `npm run dev` 同時執行。
+- Firebase Auth 與 Firestore 的瀏覽器端整合流程以 Playwright 測試，執行 `npm run test:e2e:firebase`。測試會啟動 Firebase Emulator，以 `NEXT_PUBLIC_DATA_BACKEND=firebase` 連接 `demo-quiz-site` 假專案，不連線正式 Firebase，並使用獨立輸出目錄 `.next/e2e-firebase`。
+- Firestore 安全規則另以 Firebase Emulator 測試，執行 `npm run test:rules`。本機執行上述 Emulator 測試需要 Java 21。
 - 開 PR 前必須通過：
 
   ```bash
   npm run lint
   npm run test:unit
-  npx playwright test
+  npm run test:rules
+  npm run test:e2e
+  npm run test:e2e:firebase
   ```
 
 ## 8. Git 規範

@@ -62,12 +62,17 @@ function loadQuizzes(): Quiz[] {
   }))
 }
 
-function isSignedIn(): boolean {
-  return read<string | null>(KEYS.session, null) === LOCAL_DEMO_ADMIN.email
+function getSessionEmail(): string | null {
+  const email = read<string | null>(KEYS.session, null)
+  return typeof email === "string" && email.length > 0 ? email : null
+}
+
+function isAdmin(): boolean {
+  return getSessionEmail() === LOCAL_DEMO_ADMIN.email
 }
 
 function requireAdmin(): void {
-  if (!isSignedIn()) throw new DataError("權限不足：請確認你已用管理員帳號登入")
+  if (!isAdmin()) throw new DataError("權限不足：請確認你已用管理員帳號登入")
 }
 
 const quizzes: QuizRepository = {
@@ -81,7 +86,7 @@ const quizzes: QuizRepository = {
   async get(id) {
     const quiz = loadQuizzes().find((q) => q.id === id)
     if (!quiz) return null
-    return quiz.published || isSignedIn() ? quiz : null
+    return quiz.published || isAdmin() ? quiz : null
   },
   async create(draft: QuizDraft) {
     requireAdmin()
@@ -132,8 +137,9 @@ const submissions: SubmissionRepository = {
 const listeners = new Set<(session: AdminSession) => void>()
 
 function currentSession(): AdminSession {
-  return isSignedIn()
-    ? { status: "signed-in", email: LOCAL_DEMO_ADMIN.email, isAdmin: true }
+  const email = getSessionEmail()
+  return email
+    ? { status: "signed-in", email, isAdmin: email === LOCAL_DEMO_ADMIN.email }
     : { status: "signed-out" }
 }
 

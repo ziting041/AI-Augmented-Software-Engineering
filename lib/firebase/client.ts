@@ -1,6 +1,14 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app"
-import { getAuth, type Auth } from "firebase/auth"
-import { getFirestore, type Firestore } from "firebase/firestore"
+import {
+  connectAuthEmulator,
+  getAuth,
+  type Auth,
+} from "firebase/auth"
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  type Firestore,
+} from "firebase/firestore"
 
 // Next.js 只會內嵌直接寫出的 process.env.NEXT_PUBLIC_*，不可改成動態存取
 const firebaseConfig = {
@@ -13,9 +21,19 @@ const firebaseConfig = {
 }
 
 // 開發時 HMR 會重複執行此模組，避免重複初始化
-export const app: FirebaseApp = getApps().length
-  ? getApp()
-  : initializeApp(firebaseConfig)
+const isNewApp = getApps().length === 0
+export const app: FirebaseApp = isNewApp ? initializeApp(firebaseConfig) : getApp()
 
 export const auth: Auth = getAuth(app)
 export const db: Firestore = getFirestore(app)
+
+if (isNewApp && process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "true") {
+  if (!firebaseConfig.projectId?.startsWith("demo-")) {
+    throw new Error("Firebase Emulator 測試必須使用 demo 專案 ID")
+  }
+
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+    disableWarnings: true,
+  })
+  connectFirestoreEmulator(db, "127.0.0.1", 8080)
+}
