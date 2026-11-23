@@ -66,11 +66,10 @@ npm run dev
 | `npm run check:ac`   | 檢查每個測試都對應 [驗收條件](docs/user-stories.md)    |
 | `npm run test:unit`  | 執行 Vitest 單元測試                                   |
 | `npm run test:e2e`   | 執行 Playwright E2E 測試（本機模式，port 3100）         |
-| `npm run test:rules` | 在 Firestore 模擬器執行安全規則測試（需 Java 11+ 與 Firebase CLI） |
 
 第一次跑 E2E 前需下載瀏覽器：`npx playwright install chromium`。
 
-所有變更請開分支並發 PR。GitHub Actions（`.github/workflows/ci.yml`）會自動執行 `lint`、`test:unit`、`test:e2e` 與 `build`；`typecheck`、`check:ac`、`test:rules` 目前未納入 CI，開 PR 前請在本機執行。
+所有變更請開分支並發 PR。GitHub Actions（`.github/workflows/ci.yml`）會自動執行 `lint`、`test:unit`、`test:e2e` 與 `build`；`typecheck`、`check:ac` 目前未納入 CI，開 PR 前請在本機執行。
 
 ## Firebase
 

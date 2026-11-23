@@ -15,7 +15,7 @@ const answers: Answers = Object.fromEntries(
 )
 
 describe("result share links", () => {
-  it("[AC-3.4] 分享連結可重新開啟同一份計算結果", () => {
+  it("[AC-5.6][AC-5.7] 分享連結包含本次結果，可重新開啟同一份計算結果", () => {
     const url = new URL(createResultLink("https://example.test", quiz.id, answers))
     const shared = readSharedResult(quiz, url.searchParams.get("result"))
 
@@ -24,7 +24,7 @@ describe("result share links", () => {
     expect(shared?.result.id).toBe("owl")
   })
 
-  it("[AC-3.5] 格式錯誤或答案無效的分享連結一律拒絕", () => {
+  it("[AC-5.3] 格式錯誤或答案無效的結果識別資料一律拒絕，不顯示任何結果", () => {
     expect(readSharedResult(quiz, "{")).toBeNull()
     expect(readSharedResult(quiz, "")).toBeNull()
     expect(

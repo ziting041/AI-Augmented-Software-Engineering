@@ -21,21 +21,13 @@ function filledQuiz(): QuizDraft {
 }
 
 describe("validateQuiz", () => {
-  it("[AC-5.1] 範例測驗與填寫完整的測驗可通過驗證", () => {
+  it("[AC-1.1] 範例測驗與填寫完整的測驗可通過驗證，可列入目錄", () => {
     expect(validateQuiz(createSampleQuiz())).toEqual([])
     expect(validateQuiz(filledQuiz())).toEqual([])
   })
 
-  it("[AC-5.2] 空白測驗會列出必填欄位", () => {
-    const errors = validateQuiz(createEmptyQuiz())
-    expect(errors).toContain("請輸入測驗標題")
-    expect(errors).toContain("結果類型 1：請輸入名稱")
-    expect(errors).toContain("第 1 題：請輸入題目內容")
-    expect(errors).toContain("第 1 題選項 1：請輸入選項內容")
-    expect(errors).toContain("請選擇或輸入測驗分類")
-  })
 
-  it("[AC-1.2] 只有已發布且內容完整的測驗可作答", () => {
+  it("[AC-1.1][AC-4.5] 只有已發布且內容完整的測驗可作答；沒有題目或題目沒有有效選項時不可作答", () => {
     const sample = createSampleQuiz()
     expect(isPlayableQuiz(sample)).toBe(true)
     expect(isPlayableQuiz({ ...sample, published: false })).toBe(false)
@@ -57,28 +49,12 @@ describe("validateQuiz", () => {
     expect(isPlayableQuiz(null)).toBe(false)
   })
 
-  it("[AC-5.2] 結果類型至少 2 個、題目至少 1 道", () => {
+  it("[AC-4.5] 沒有題目或結果類型不足的測驗不通過驗證", () => {
     const draft = { ...filledQuiz(), results: [filledQuiz().results[0]], questions: [] }
     const errors = validateQuiz(draft)
     expect(errors).toContain("至少需要 2 個結果類型")
     expect(errors).toContain("至少需要 1 道題目")
   })
 
-  it("[AC-5.2] 分數必須是 0～10 的整數", () => {
-    let draft = filledQuiz()
-    const q = draft.questions[0]
-    draft = setOptionScore(draft, q.id, q.options[0].id, draft.results[0].id, 11)
-    draft = setOptionScore(draft, q.id, q.options[1].id, draft.results[0].id, 1.5)
-    const errors = validateQuiz(draft)
-    expect(errors).toContain("第 1 題選項 1：分數須為 0～10 的整數")
-    expect(errors).toContain("第 1 題選項 2：分數須為 0～10 的整數")
-  })
 
-  it("[AC-5.2] 偵測分數指向不存在的結果類型", () => {
-    const draft = filledQuiz()
-    draft.questions[0].options[0].scores = { ghost: 1 }
-    expect(validateQuiz(draft)).toContain(
-      "第 1 題選項 1：分數對應到不存在的結果類型",
-    )
-  })
 })

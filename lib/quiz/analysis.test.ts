@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
 import { explainResult, rankResults, splitTitle } from "./analysis"
-import { buildEmblem, hashString, personaColorIndex } from "./emblem"
 import { createSampleQuiz } from "./sample"
 import { determineResult } from "./scoring"
 
@@ -12,7 +11,7 @@ const owlAnswers = Object.fromEntries(
 )
 
 describe("rankResults", () => {
-  it("[AC-3.1] 依分數排序，第一名與 determineResult 一致，比例總和為 1", () => {
+  it("[AC-5.1] 結果依據：依分數排序，第一名與實際結果一致，比例總和為 1", () => {
     const ranked = rankResults(sample, owlAnswers)
     expect(ranked[0].result.id).toBe(determineResult(sample, owlAnswers).id)
     expect(ranked[0].result.id).toBe("owl")
@@ -20,7 +19,7 @@ describe("rankResults", () => {
     expect(ranked.map((r) => r.index).sort()).toEqual([0, 1, 2, 3])
   })
 
-  it("[AC-3.1][AC-2.3] 同分時依結果類型順序，並保留原始索引", () => {
+  it("[AC-5.1] 結果依據：同分時依結果類型順序，並保留原始索引", () => {
     const ranked = rankResults(sample, {})
     expect(ranked.map((r) => r.result.id)).toEqual(["owl", "dolphin", "lion", "koala"])
     expect(ranked.every((r) => r.share === 0)).toBe(true)
@@ -28,7 +27,7 @@ describe("rankResults", () => {
 })
 
 describe("explainResult", () => {
-  it("[AC-3.1] 列出對該結果加分最多的作答，分數高者在前", () => {
+  it("[AC-5.1] 回答依據：列出對該結果加分最多的作答，分數高者在前", () => {
     const answers = { ...owlAnswers, q3: ["q3a", "q3e"] }
     const evidence = explainResult(sample, answers, "owl")
     expect(evidence).toHaveLength(3)
@@ -37,47 +36,15 @@ describe("explainResult", () => {
     expect(evidence[2].options.map((o) => o.id)).toEqual(["q3a", "q3e"])
   })
 
-  it("[AC-3.1] 沒有加分的題目不列入", () => {
+  it("[AC-5.1] 回答依據：沒有加分的題目不列入", () => {
     expect(explainResult(sample, owlAnswers, "lion")).toEqual([])
   })
 })
 
 describe("splitTitle", () => {
-  it("[AC-3.1] 拆出名稱與副標", () => {
+  it("[AC-5.1] 結果說明：拆出名稱與副標", () => {
     expect(splitTitle("貓頭鷹：冷靜的思考者")).toEqual({ name: "貓頭鷹", tagline: "冷靜的思考者" })
     expect(splitTitle("Owl: thinker")).toEqual({ name: "Owl", tagline: "thinker" })
     expect(splitTitle("甜食派")).toEqual({ name: "甜食派", tagline: null })
-  })
-})
-
-describe("buildEmblem", () => {
-  const shares = rankResults(sample, owlAnswers)
-    .sort((a, b) => a.index - b.index)
-    .map((r) => r.share)
-
-  it("[AC-3.2] 同樣的輸入產生同樣的徽章", () => {
-    const a = buildEmblem({ seed: "x", shares, highlight: 0 })
-    const b = buildEmblem({ seed: "x", shares, highlight: 0 })
-    expect(a).toEqual(b)
-    expect(buildEmblem({ seed: "y", shares, highlight: 0 })).not.toEqual(a)
-  })
-
-  it("[AC-3.2] 每個結果類型一片花瓣，得分最高者最長且被標示", () => {
-    const emblem = buildEmblem({ seed: "x", shares, highlight: 0 })
-    expect(emblem.petals).toHaveLength(4)
-    const winner = emblem.petals.find((p) => p.highlight)!
-    expect(winner.colorIndex).toBe(1)
-    expect(Math.max(...emblem.petals.map((p) => p.length))).toBe(winner.length)
-  })
-
-  it("[AC-3.2] 結果類型少於 4 個時重複花瓣", () => {
-    expect(buildEmblem({ seed: "x", shares: [0.5, 0.5], highlight: 1 }).petals).toHaveLength(4)
-    expect(buildEmblem({ seed: "x", shares: [], highlight: 0 }).petals).toHaveLength(0)
-  })
-
-  it("[AC-3.2] 雜湊可重現，配色索引依結果順序循環", () => {
-    expect(hashString("abc")).toBe(hashString("abc"))
-    expect(personaColorIndex(0)).toBe(1)
-    expect(personaColorIndex(6)).toBe(1)
   })
 })

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getRepositories } from "@/lib/data"
+import { resolveAdminAccess } from "@/lib/data/admin-access"
 import { useAdminSession } from "@/lib/data/hooks"
 import { EmptyState, ErrorState, LoadingState } from "../status-message"
 
@@ -15,28 +16,30 @@ import { EmptyState, ErrorState, LoadingState } from "../status-message"
  */
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const session = useAdminSession()
+  const access = resolveAdminAccess(useAdminSession())
 
   useEffect(() => {
-    if (session.status === "signed-out") router.replace("/admin/login")
-  }, [session.status, router])
+    if (access.kind === "require-login") router.replace("/admin/login")
+  }, [access.kind, router])
 
-  if (session.status === "error") {
+  if (access.kind === "error") {
     return (
       <ErrorState
-        message={session.message}
+        message={access.message}
         onRetry={() => window.location.reload()}
       />
     )
   }
 
-  if (session.status !== "signed-in") return <LoadingState label="確認登入狀態…" />
+  if (access.kind === "checking" || access.kind === "require-login") {
+    return <LoadingState label="確認登入狀態…" />
+  }
 
-  if (!session.isAdmin) {
+  if (access.kind === "forbidden") {
     return (
       <EmptyState title="你沒有管理員權限">
         <p className="text-sm text-muted-foreground">
-          目前登入的帳號 {session.email} 不在管理員名單中。
+          目前登入的帳號 {access.email} 不在管理員名單中，或權限已被撤銷。
         </p>
         <div className="flex gap-2">
           <Button
@@ -56,7 +59,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid gap-6">
       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-        <span>已登入：{session.email}</span>
+        <span>已登入：{access.email}</span>
         <Button
           variant="ghost"
           size="sm"

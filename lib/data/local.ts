@@ -25,6 +25,23 @@ const KEYS = {
   session: "quiz-site:session",
 } as const
 
+/** 本機模式登入有效時間：逾期後需重新登入 */
+export const LOCAL_SESSION_TTL_MS = 8 * 60 * 60 * 1000
+
+export interface LocalSession {
+  email: string
+  expiresAt: number
+}
+
+/** 解析儲存的登入資料；格式不符、帳號不對或已逾期都視為未登入（回傳 null） */
+export function parseLocalSession(value: unknown, now: number): LocalSession | null {
+  if (!value || typeof value !== "object") return null
+  const { email, expiresAt } = value as Record<string, unknown>
+  if (email !== LOCAL_DEMO_ADMIN.email) return null
+  if (typeof expiresAt !== "number" || !Number.isFinite(expiresAt) || expiresAt <= now) return null
+  return { email, expiresAt }
+}
+
 interface StoredSubmission {
   quizId: string
   resultId: string
@@ -62,8 +79,9 @@ function loadQuizzes(): Quiz[] {
   }))
 }
 
+/** 每次操作都重新檢查，登入逾期後立即失效 */
 function isSignedIn(): boolean {
-  return read<string | null>(KEYS.session, null) === LOCAL_DEMO_ADMIN.email
+  return parseLocalSession(read<unknown>(KEYS.session, null), Date.now()) !== null
 }
 
 function requireAdmin(): void {
@@ -152,7 +170,8 @@ const authService: AuthService = {
     if (email !== LOCAL_DEMO_ADMIN.email || password !== LOCAL_DEMO_ADMIN.password) {
       throw new DataError("帳號或密碼錯誤")
     }
-    write(KEYS.session, email)
+    const session: LocalSession = { email, expiresAt: Date.now() + LOCAL_SESSION_TTL_MS }
+    write(KEYS.session, session)
     notify()
   },
   async signOut() {
