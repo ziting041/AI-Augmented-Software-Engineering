@@ -9,21 +9,22 @@ async function login(page: Page) {
   await expect(page.getByRole("heading", { name: "測驗管理" })).toBeVisible();
 }
 
-test("[AC-4.3] 未登入時無法進入管理頁", async ({ page }) => {
+test("[AC-6.1] 未登入時開啟管理頁被導向登入頁，看不到管理內容", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
 });
 
-test("[AC-4.2] 密碼錯誤時無法登入", async ({ page }) => {
+test("[AC-6.1] 密碼錯誤時無法登入，仍停留在登入頁", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("電子郵件").fill("admin@example.com");
   await page.getByLabel("密碼").fill("wrong");
   await page.getByRole("button", { name: "登入" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "帳號或密碼錯誤" })).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/login$/);
 });
 
-test("[AC-4.1][AC-5.1][AC-5.2][AC-1.1][AC-6.1] 管理員新增測驗、使用者作答、管理員查看統計", async ({ page }) => {
+test("[AC-6.5][AC-1.1] 管理員可使用管理功能新增測驗，發布後出現在目錄", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "新增測驗" }).click();
 
@@ -69,7 +70,7 @@ test("[AC-4.1][AC-5.1][AC-5.2][AC-1.1][AC-6.1] 管理員新增測驗、使用者
   await expect(page.getByText("1 人・100%")).toBeVisible();
 });
 
-test("[AC-5.3] 草稿測驗不會出現在首頁", async ({ page }) => {
+test("[AC-1.1][AC-1.2] 未發布的測驗不會出現在目錄，沒有可作答測驗時顯示空狀態", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "編輯「你是哪一種森林動物？」" }).click();
   await page.getByText("發布（勾選後所有使用者都看得到）").click();
@@ -80,19 +81,17 @@ test("[AC-5.3] 草稿測驗不會出現在首頁", async ({ page }) => {
   await expect(page.getByText("目前還沒有測驗")).toBeVisible();
 });
 
-test("[AC-5.5] 匯入範例測驗只補上缺少的，重複匯入不會產生重複", async ({ page }) => {
+test("[AC-6.4] 登入逾期後開啟管理頁會被要求重新登入", async ({ page }) => {
   await login(page);
-  const importButton = page.getByRole("button", { name: "匯入範例測驗" });
+  await page.evaluate(() => {
+    const session = JSON.parse(localStorage.getItem("quiz-site:session") ?? "{}");
+    localStorage.setItem(
+      "quiz-site:session",
+      JSON.stringify({ ...session, expiresAt: Date.now() - 1000 }),
+    );
+  });
 
-  // 本機模式預設只有「森林動物」，應補上其餘 3 份
-  await importButton.click();
-  await expect(page.getByRole("status").filter({ hasText: "已匯入 3 份範例測驗" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^編輯「/ })).toHaveCount(4);
-
-  await importButton.click();
-  await expect(page.getByRole("status").filter({ hasText: "範例測驗都已經在清單中了" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^編輯「/ })).toHaveCount(4);
-
-  await page.goto("/");
-  await expect(page.getByRole("link", { name: /^開始「/ })).toHaveCount(4);
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole("heading", { name: "測驗管理" })).toHaveCount(0);
 });

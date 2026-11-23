@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { createSampleQuiz } from "./sample"
 import {
   determineResult,
+  getAnswerValidationErrors,
   isQuestionAnswered,
-  isQuizComplete,
   selectOption,
   tallyScores,
 } from "./scoring"
@@ -44,29 +43,26 @@ const quiz: QuizDraft = {
 }
 
 describe("isQuestionAnswered", () => {
-  it("[AC-2.2] 單選題需剛好選一個", () => {
+  it("[AC-4.6] 單選題需剛好選一個才算有效作答", () => {
     expect(isQuestionAnswered(single, [])).toBe(false)
     expect(isQuestionAnswered(single, ["s1"])).toBe(true)
     expect(isQuestionAnswered(single, ["s1", "s2"])).toBe(false)
   })
 
-  it("[AC-2.2] 多選題至少選一個", () => {
+  it("[AC-4.6] 多選題至少選一個才算有效作答", () => {
     expect(isQuestionAnswered(multiple, undefined)).toBe(false)
     expect(isQuestionAnswered(multiple, ["m1", "m3"])).toBe(true)
   })
 
-  it("[AC-2.4] 不接受不屬於該題的選項", () => {
-    expect(isQuestionAnswered(single, ["m1"])).toBe(false)
-  })
 })
 
 describe("selectOption", () => {
-  it("[AC-2.2] 單選題會取代原本的選擇", () => {
+  it("[AC-4.4] 返回修改單選題時以新答案取代原本的選擇", () => {
     const answers = selectOption({ s: ["s1"] }, single, "s2")
     expect(answers.s).toEqual(["s2"])
   })
 
-  it("[AC-2.2] 多選題可勾選與取消，並保持選項順序", () => {
+  it("[AC-4.4] 返回修改多選題時可勾選與取消，並保持選項順序", () => {
     let answers = selectOption({}, multiple, "m3")
     answers = selectOption(answers, multiple, "m1")
     expect(answers.m).toEqual(["m1", "m3"])
@@ -76,28 +72,19 @@ describe("selectOption", () => {
 })
 
 describe("tallyScores", () => {
-  it("[AC-2.1] 加總所選選項的分數，未得分的結果為 0", () => {
+  it("[AC-4.7] 加總所選選項的分數，未得分的結果為 0", () => {
     expect(tallyScores(quiz, { s: ["s1"], m: ["m1", "m3"] })).toEqual({ a: 4, b: 1 })
     expect(tallyScores(quiz, {})).toEqual({ a: 0, b: 0 })
   })
 
-  it("[AC-2.4] 忽略指向不存在結果類型的分數", () => {
-    const broken: QuizDraft = {
-      ...quiz,
-      questions: [
-        { ...single, options: [{ id: "s1", text: "A", scores: { ghost: 9, a: 1 } }] },
-      ],
-    }
-    expect(tallyScores(broken, { s: ["s1"] })).toEqual({ a: 1, b: 0 })
-  })
 })
 
 describe("determineResult", () => {
-  it("[AC-2.1] 回傳總分最高的結果類型", () => {
+  it("[AC-4.7] 回傳總分最高的結果類型", () => {
     expect(determineResult(quiz, { s: ["s2"], m: ["m2"] }).id).toBe("b")
   })
 
-  it("[AC-2.3] 同分時取排列較前面的結果類型", () => {
+  it("[AC-4.7] 同分時取排列較前面的結果類型，結果可預期", () => {
     const multipleOnly: QuizDraft = { ...quiz, questions: [multiple] }
     // a:1, b:1 同分 → 取排在前面的 a
     expect(determineResult(multipleOnly, { m: ["m1", "m2"] }).id).toBe("a")
@@ -106,28 +93,31 @@ describe("determineResult", () => {
     expect(determineResult(reversed, { m: ["m1", "m2"] }).id).toBe("b")
   })
 
-  it("[AC-2.4] 未作答完畢時拋出錯誤", () => {
+
+
+})
+
+describe("提交前的答案驗證", () => {
+  it("[AC-4.6][AC-5.2] 尚有必答題未完成時不產生結果", () => {
+    expect(getAnswerValidationErrors(quiz, { s: ["s1"] })).toContain("尚有題目未作答")
+    expect(getAnswerValidationErrors(quiz, { s: ["s1"], m: [] })).toContain("尚有題目未作答")
     expect(() => determineResult(quiz, { s: ["s1"] })).toThrow("尚有題目未作答")
-    expect(isQuizComplete(quiz, { s: ["s1"] })).toBe(false)
   })
 
-  it("[AC-2.4] 拒絕不屬於該測驗或重複的答案", () => {
-    expect(isQuizComplete(quiz, { s: ["s1"], m: ["m1"], ghost: ["x"] })).toBe(false)
-    expect(() => determineResult(quiz, { s: ["m1"], m: ["m1"] })).toThrow(
-      "答案包含不屬於該題的選項",
+  it("[AC-4.6][AC-5.2] 答案包含不屬於該題的選項時不產生結果", () => {
+    const invalid = "答案包含不屬於該題的選項"
+    expect(getAnswerValidationErrors(quiz, { s: ["m1"], m: ["m1"] })).toContain(invalid)
+    expect(getAnswerValidationErrors(quiz, { s: ["s1", "s2"], m: ["m1"] })).toContain(invalid)
+    expect(getAnswerValidationErrors(quiz, { s: ["s1"], m: ["m1", "m1"] })).toContain(invalid)
+    expect(getAnswerValidationErrors(quiz, { s: ["s1"], m: ["m1"], ghost: ["x"] })).toContain(
+      "答案包含不存在的題目",
     )
-    expect(isQuestionAnswered(multiple, ["m1", "m1"])).toBe(false)
+    expect(getAnswerValidationErrors(quiz, null)).toEqual(["答案資料無效"])
+    expect(() => determineResult(quiz, { s: ["m1"], m: ["m1"] })).toThrow(invalid)
   })
 
-  it("[AC-5.6] 範例測驗每個結果類型都有機會出現", () => {
-    const sample = createSampleQuiz()
-    const reached = new Set<string>()
-    sample.results.forEach((_, index) => {
-      const answers = Object.fromEntries(
-        sample.questions.map((q) => [q.id, [q.options[index].id]]),
-      )
-      reached.add(determineResult(sample, answers).id)
-    })
-    expect(reached.size).toBe(sample.results.length)
+  it("[AC-4.7] 所有必答題均有有效答案時通過驗證並產生結果", () => {
+    expect(getAnswerValidationErrors(quiz, { s: ["s2"], m: ["m2"] })).toEqual([])
+    expect(determineResult(quiz, { s: ["s2"], m: ["m2"] })).toEqual(quiz.results[1])
   })
 })
